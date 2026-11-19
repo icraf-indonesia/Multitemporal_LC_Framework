@@ -95,6 +95,31 @@ def test_evaluation_imports_and_runs_without_gee_luma_ml_or_plotly() -> None:
     )
 
 
+def test_rfecv_runs_without_gee_or_luma_and_artifact_loads_without_sklearn() -> None:
+    # SelectedFeaturesArtifact loads with zero optional deps (even without sklearn or ee)
+    _run_isolated_import(
+        "from lc_framework.features import SelectedFeaturesArtifact, load_selected_features; "
+        "art = SelectedFeaturesArtifact("
+        "selected_features=('ndvi_dry', 'mndwi_dry'), "
+        "all_candidate_features=('ndvi_dry', 'mndwi_dry', 'noise'), "
+        "scoring='balanced_accuracy', best_score=0.92, n_samples=60); "
+        "assert art.selected_features == ('ndvi_dry', 'mndwi_dry')",
+        blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
+    )
+    # Full RFECV runs standalone with GEE and luma_ge completely blocked
+    _run_isolated_import(
+        "import numpy as np, pandas as pd; "
+        "from lc_framework.features import run_rfecv_selection; "
+        "rng = np.random.default_rng(0); "
+        "X = pd.DataFrame({'f1': np.r_[rng.normal(2,0.2,12), rng.normal(-2,0.2,12)], "
+        "'f2': rng.normal(0,1,24)}); "
+        "y = pd.Series([1]*12 + [2]*12); "
+        "res = run_rfecv_selection(X, y, cv=2, n_estimators=10, n_jobs=1); "
+        "assert 'f1' in res.selected_features",
+        blocked=("ee", "luma_ge", "lightgbm", "xgboost", "skimage", "geopandas"),
+    )
+
+
 def test_temporal_and_features_import_lazily_without_ee() -> None:
     _run_isolated_import(
         "import sys; import lc_framework.features as features; "

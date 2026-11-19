@@ -7,6 +7,14 @@ from lc_framework.features.optical import (
     compute_phenological_deltas,
     compute_seasonal_indices,
 )
+from lc_framework.features.rfecv import (
+    ArtifactFormat,
+    RFECVResult,
+    SelectedFeaturesArtifact,
+    load_selected_features,
+    run_rfecv_from_csv,
+    run_rfecv_selection,
+)
 from lc_framework.features.sar import (
     OrbitPass,
     SpeckleMethod,
@@ -29,8 +37,11 @@ from lc_framework.features.terrain_texture import get_glcm_texture, get_topograp
 
 __all__ = [
     "SUPPORTED_SPECTRAL_INDICES",
+    "ArtifactFormat",
     "FeatureStackSpec",
     "OrbitPass",
+    "RFECVResult",
+    "SelectedFeaturesArtifact",
     "SpeckleMethod",
     "SpeckleMode",
     "TerrainModel",
@@ -46,5 +57,8 @@ __all__ = [
     "get_seasonal_s1",
     "get_topography",
     "lin_to_db",
+    "load_selected_features",
     "preprocess_s1_collection",
+    "run_rfecv_from_csv",
+    "run_rfecv_selection",
 ]

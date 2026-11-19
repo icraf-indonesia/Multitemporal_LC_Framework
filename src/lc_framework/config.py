@@ -164,6 +164,10 @@ class ProjectConfig(BaseModel):
         default=None,
         description="Optional GEE asset or Drive folder prefix for exported artifacts.",
     )
+    sample_features_csv: str | None = Field(
+        default=None,
+        description="Optional path to an exported sample-features CSV for local RFECV/ML.",
+    )
     seasons: dict[str, float] = Field(
         default_factory=lambda: {"wet": 0.16, "dry": 0.65, "harmonic_mid": 0.50},
         description="Named fractional-year offsets in [0.0, 1.0).",

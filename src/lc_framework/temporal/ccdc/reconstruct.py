@@ -6,10 +6,16 @@ import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from lc_framework.temporal.ccdc.specs import BandCase, CCDCProfile, SegmentMatch, _require_ee
+from lc_framework.temporal.ccdc import specs as ccdc_specs
+from lc_framework.temporal.ccdc.specs import BandCase, CCDCProfile, SegmentMatch
 
 if TYPE_CHECKING:
     import ee
+
+
+def slice_segment_coefs(ccdc: ee.Image, coef_band_name: str, seg_idx: ee.Image) -> ee.Image:
+    """Extract the 1D coefficient vector for segment ``seg_idx`` from a 2D ``*_coefs`` band."""
+    return ccdc.select(coef_band_name).arraySlice(0, seg_idx, seg_idx.add(1)).arrayProject([1])
 
 
 def nearest_segment(
@@ -17,7 +23,7 @@ def nearest_segment(
     target_date: float | ee.Number,
 ) -> SegmentMatch:
     """Locate the temporally closest CCDC Temporal Segment per pixel at ``target_date``."""
-    ee_mod = _require_ee()
+    ee_mod = ccdc_specs._require_ee()
     t = ee_mod.Number(target_date)
     t_start = ccdc.select("tStart")
     t_end = ccdc.select("tEnd")
@@ -38,7 +44,7 @@ def fill_isolated(
     if not (1 <= min_neighbors <= 8):
         raise ValueError(f"min_neighbors must be between 1 and 8, got {min_neighbors!r}.")
 
-    ee_mod = _require_ee()
+    ee_mod = ccdc_specs._require_ee()
     valid_neighbors = (
         image.select(0)
         .mask()
@@ -62,7 +68,7 @@ def get_synthetic_stack(
     include_diagnostics: bool = True,
 ) -> ee.Image:
     """Reconstruct cloud-free synthetic surface reflectance at ``target_date``."""
-    ee_mod = _require_ee()
+    ee_mod = ccdc_specs._require_ee()
     prof = profile if profile is not None else CCDCProfile.standard()
     target_bands = tuple(b.lower() for b in bands) if bands is not None else prof.bands
     if not target_bands:
@@ -90,11 +96,7 @@ def get_synthetic_stack(
     synthetic_bands: list[Any] = []
     for band in target_bands:
         coef_band_name = prof.coef_band_name(band)
-        coefs = (
-            ccdc.select(coef_band_name)
-            .arraySlice(0, seg.idx, seg.idx.add(1))
-            .arrayProject([1])
-        )
+        coefs = slice_segment_coefs(ccdc, coef_band_name, seg.idx)
         evaluated = (
             coefs.multiply(terms)
             .arrayReduce(ee_mod.Reducer.sum(), [0])
@@ -132,7 +134,7 @@ def get_harmonics(
     output_case: BandCase | None = None,
 ) -> ee.Image:
     """Extract first-order annual harmonic amplitude and phase at ``target_date``."""
-    ee_mod = _require_ee()
+    ee_mod = ccdc_specs._require_ee()
     prof = profile if profile is not None else CCDCProfile.standard()
     target_bands = tuple(b.lower() for b in bands)
     if not target_bands:
@@ -144,11 +146,7 @@ def get_harmonics(
     harmonic_images: list[Any] = []
     for band in target_bands:
         coef_band_name = prof.coef_band_name(band)
-        coefficients = (
-            ccdc.select(coef_band_name)
-            .arraySlice(0, seg.idx, seg.idx.add(1))
-            .arrayProject([1])
-        )
+        coefficients = slice_segment_coefs(ccdc, coef_band_name, seg.idx)
         a1 = coefficients.arrayGet([2]).divide(prof.coef_scale)
         b1 = coefficients.arrayGet([3]).divide(prof.coef_scale)
 

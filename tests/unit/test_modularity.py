@@ -97,8 +97,9 @@ def test_evaluation_imports_and_runs_without_gee_luma_ml_or_plotly() -> None:
 
 def test_temporal_ccdc_specs_import_lazily_without_ee() -> None:
     _run_isolated_import(
-        "from lc_framework.temporal.ccdc.specs import CCDCParams, CCDCProfile, ReflectanceBounds; "
-        "p = CCDCParams.sentinel2(); prof = CCDCProfile.standard(); "
-        "assert prof.coef_band_name('nir') == 'nir_coefs'",
+        "import lc_framework.temporal as temporal; "
+        "p = temporal.CCDCParams.sentinel2(); prof = temporal.CCDCProfile.standard(); "
+        "assert prof.coef_band_name('nir') == 'nir_coefs'; "
+        "assert temporal.OPTICAL_BANDS == ('blue', 'green', 'red', 'nir', 'swir1', 'swir2')",
         blocked=("ee", "luma_ge", "sklearn"),
     )

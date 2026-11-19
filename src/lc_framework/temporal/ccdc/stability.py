@@ -6,7 +6,7 @@ import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from lc_framework.temporal.ccdc.reconstruct import nearest_segment
+from lc_framework.temporal.ccdc.reconstruct import nearest_segment, slice_segment_coefs
 from lc_framework.temporal.ccdc.specs import CCDCProfile
 
 if TYPE_CHECKING:
@@ -62,9 +62,7 @@ def stable_in_period(
         for band in drift_bands:
             coef_band = prof.coef_band_name(band)
             slope = (
-                ccdc.select(coef_band)
-                .arraySlice(0, seg_end.idx, seg_end.idx.add(1))
-                .arrayProject([1])
+                slice_segment_coefs(ccdc, coef_band, seg_end.idx)
                 .arrayGet([1])
                 .divide(prof.coef_scale)
                 .abs()

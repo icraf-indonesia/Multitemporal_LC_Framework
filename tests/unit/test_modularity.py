@@ -131,3 +131,21 @@ def test_temporal_and_features_import_lazily_without_ee() -> None:
         "assert temporal.OPTICAL_BANDS == ('blue', 'green', 'red', 'nir', 'swir1', 'swir2')",
         blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
     )
+
+
+def test_obia_imports_lazily_without_optional_dependencies() -> None:
+    _run_isolated_import(
+        "import sys, numpy as np; import lc_framework.obia as obia; "
+        "assert 'lc_framework.temporal' not in sys.modules; "
+        "assert 'lc_framework.features' not in sys.modules; "
+        "assert 'lc_framework.assembly' not in sys.modules; "
+        "assert 'lc_framework.evaluation' not in sys.modules; "
+        "assert 'lc_framework.luma_adapter' not in sys.modules; "
+        "snic = obia.GEESnicSegmenter(obia.SNICParams(size=10)); "
+        "slic = obia.LocalSlicSegmenter(obia.SLICParams(n_segments=20)); "
+        "assert isinstance(snic, obia.Segmenter); "
+        "assert isinstance(slic, obia.Segmenter); "
+        "m = obia.valid_segment_mask(np.array([[0, -1, 5, -9]], dtype=np.int32)); "
+        "assert m.tolist() == [[False, False, True, True]]",
+        blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
+    )

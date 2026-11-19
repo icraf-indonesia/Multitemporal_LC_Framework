@@ -95,11 +95,14 @@ def test_evaluation_imports_and_runs_without_gee_luma_ml_or_plotly() -> None:
     )
 
 
-def test_temporal_ccdc_specs_import_lazily_without_ee() -> None:
+def test_temporal_and_features_import_lazily_without_ee() -> None:
     _run_isolated_import(
+        "import sys; import lc_framework.features as features; "
+        "assert 'lc_framework.temporal' not in sys.modules; "
+        "spec = features.FeatureStackSpec(); assert 'NDVI' in spec.indices; "
         "import lc_framework.temporal as temporal; "
         "p = temporal.CCDCParams.sentinel2(); prof = temporal.CCDCProfile.standard(); "
         "assert prof.coef_band_name('nir') == 'nir_coefs'; "
         "assert temporal.OPTICAL_BANDS == ('blue', 'green', 'red', 'nir', 'swir1', 'swir2')",
-        blocked=("ee", "luma_ge", "sklearn"),
+        blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
     )

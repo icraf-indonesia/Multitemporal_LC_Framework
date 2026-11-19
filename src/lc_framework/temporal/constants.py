@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
-OPTICAL_BANDS: tuple[str, ...] = ("blue", "green", "red", "nir", "swir1", "swir2")
+from lc_framework._gee import OPTICAL_BANDS
+
+__all__ = [
+    "CCDC_CORE_EXPORT_BANDS",
+    "DEFAULT_CCDC_REFLECTANCE_SCALE",
+    "DEFAULT_REFLECTANCE_MAX",
+    "DEFAULT_REFLECTANCE_MIN",
+    "DEFAULT_TOL_YEARS",
+    "OPTICAL_BANDS",
+]
 
 DEFAULT_CCDC_REFLECTANCE_SCALE: float = 10000.0
 DEFAULT_REFLECTANCE_MIN: float = -0.05

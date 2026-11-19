@@ -65,6 +65,36 @@ def test_assembly_imports_and_runs_without_gee_luma_or_ml() -> None:
     )
 
 
+def test_evaluation_imports_and_runs_without_gee_luma_ml_or_plotly() -> None:
+    optional_deps = (
+        "ee",
+        "luma_ge",
+        "sklearn",
+        "lightgbm",
+        "xgboost",
+        "skimage",
+        "geopandas",
+        "plotly",
+    )
+    _run_isolated_import(
+        "import numpy as np; "
+        "from lc_framework.evaluation import ("
+        "compute_thematic_accuracy, compute_log_loss, compute_transition_summary, "
+        "build_sankey_data, export_sankey_html, suggest_active_learning_samples"
+        "); "
+        "res = compute_thematic_accuracy([1, 1, 2, 2], [1, 2, 2, 2], "
+        "mapped_pixel_counts={1: 100, 2: 100}, pixel_area_m2=100.0); "
+        "assert res.overall_metrics['overall_accuracy_area_weighted'] > 0; "
+        "ll = compute_log_loss([1, 2], np.array([[0.8, 0.2], [0.1, 0.9]]), class_ids=[1, 2]); "
+        "assert ll > 0; "
+        "tr = compute_transition_summary("
+        "np.array([[1, 1], [2, 2]]), np.array([[1, 2], [2, 2]]), "
+        "pixel_area_m2=10000.0, t1_label='2020', t2_label='2025'); "
+        "assert tr.overall_disagreement['overall_total_disagreement_ha'] == 1.0",
+        blocked=optional_deps,
+    )
+
+
 def test_temporal_ccdc_specs_import_lazily_without_ee() -> None:
     _run_isolated_import(
         "from lc_framework.temporal.ccdc.specs import CCDCParams, CCDCProfile, ReflectanceBounds; "

@@ -46,6 +46,25 @@ def test_core_package_and_config_import_without_optional_dependencies() -> None:
     )
 
 
+def test_assembly_imports_and_runs_without_gee_luma_or_ml() -> None:
+    optional_deps = ("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas")
+    _run_isolated_import(
+        "import numpy as np; "
+        "from lc_framework.assembly import ("
+        "blend_pixel_and_object_probabilities, bayesian_smooth, apply_mmu_array, "
+        "derive_hard_labels, heal_array_seams, run_hybrid_assembly"
+        "); "
+        "p = np.full((2, 5, 5), 0.2, dtype=np.float32); p[0] = 0.8; "
+        "s = np.ones((5, 5), dtype=np.int32); "
+        "res = blend_pixel_and_object_probabilities(p, s, heal_segment_seams=False); "
+        "sm = bayesian_smooth(res.probabilities, window_size=3); "
+        "lbl = derive_hard_labels(sm); "
+        "mmu = apply_mmu_array(lbl, min_patch_sizes={1: 2}); "
+        "assert mmu.shape == (5, 5)",
+        blocked=optional_deps,
+    )
+
+
 def test_temporal_ccdc_specs_import_lazily_without_ee() -> None:
     _run_isolated_import(
         "from lc_framework.temporal.ccdc.specs import CCDCParams, CCDCProfile, ReflectanceBounds; "

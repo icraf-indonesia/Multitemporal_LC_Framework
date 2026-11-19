@@ -1,0 +1,13 @@
+/.agents
+/.scratch
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.tif.aux.xml

@@ -1,0 +1,56 @@
+# Example study-area-agnostic ProjectConfig for LC_Framework.
+# Copy this file to your project workspace (e.g. Google Drive or local folder)
+# and fill in your AOI, CRS, epochs, and Class Schema.
+
+project_name: example_watershed_lulc
+crs: EPSG:32748
+scale_m: 10
+aoi_asset: projects/your-gee-project/assets/study_area_aoi
+export_prefix: projects/your-gee-project/assets/lulc_outputs
+
+# Fractional-year offsets in [0.0, 1.0) for seasonal CCDC synthesis
+seasons:
+  wet: 0.16
+  dry: 0.65
+  harmonic_mid: 0.50
+
+# Mapping periods (used for multi-epoch exports, luma-stack delegation, and trajectories)
+epochs:
+  - label: "2020"
+    start_date: "2020-01-01"
+    end_date: "2020-12-31"
+    sensor: S2
+    cloud_cover: 30
+    cs_threshold: 0.60
+  - label: "2025"
+    start_date: "2025-01-01"
+    end_date: "2025-12-31"
+    sensor: S2
+    cloud_cover: 30
+    cs_threshold: 0.60
+
+# Canonical Class Schema (shared across GEE bands, GeoTIFF manifests, and reports)
+class_schema:
+  - id: 1
+    name: Forest
+    color: "#1b5e20"
+  - id: 2
+    name: Agroforestry
+    color: "#66bb6a"
+  - id: 3
+    name: Cropland
+    color: "#fbc02d"
+  - id: 4
+    name: Built-up
+    color: "#e53935"
+  - id: 5
+    name: Waterbody
+    color: "#0288d1"
+
+# Optional per-class smoothness weights for Hybrid Classification Assembly
+smoothness_weights:
+  Forest: 3.5
+  Agroforestry: 1.5
+  Cropland: 1.0
+  Built-up: 1.0
+  Waterbody: 4.0

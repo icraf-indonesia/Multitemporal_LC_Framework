@@ -149,3 +149,20 @@ def test_obia_imports_lazily_without_optional_dependencies() -> None:
         "assert m.tolist() == [[False, False, True, True]]",
         blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
     )
+
+
+def test_classification_imports_lazily_without_optional_dependencies() -> None:
+    _run_isolated_import(
+        "import sys; import lc_framework.classification as cls; "
+        "assert 'lc_framework.temporal' not in sys.modules; "
+        "assert 'lc_framework.features' not in sys.modules; "
+        "assert 'lc_framework.obia' not in sys.modules; "
+        "assert 'lc_framework.assembly' not in sys.modules; "
+        "assert 'lc_framework.evaluation' not in sys.modules; "
+        "assert 'lc_framework.luma_adapter' not in sys.modules; "
+        "p = cls.GEERFParams(number_of_trees=100); "
+        "assert p.to_ee_dict()['numberOfTrees'] == 100; "
+        "grid = cls.default_param_space('random_forest'); "
+        "assert 'n_estimators' in grid",
+        blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
+    )

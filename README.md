@@ -69,9 +69,9 @@ pip install -e ".[gee,ml,obia,viz,dev]"
 | Install Slice | Included Capabilities | Requires GEE? |
 | :--- | :--- | :---: |
 | **Core** (`lc-framework`) | `config`, `io`, `assembly`, `evaluation`, `luma_adapter` (lazy) | No |
-| **`[gee]`** | `temporal` (Landsat/S2 + CCDC), `features` (indices/SAR/terrain/GLCM) | Yes |
-| **`[ml]`** | Local CSV RFECV & local ML backends (upcoming) | No |
-| **`[obia]`** | Local Python SLIC segmentation & GEOBIA (upcoming) | No |
+| **`[gee]`** | `temporal` (Landsat/S2 + CCDC), `features` (indices/SAR/terrain/GLCM), `samples` (AlphaEarth), GEE RF & GEE SNIC | Yes |
+| **`[ml]`** | Local CSV RFECV & local ML pixel classification (`RandomForest`, `ExtraTrees`, `LightGBM`, `XGBoost`) | No |
+| **`[obia]`** | Local Python SLIC segmentation & pure `Geo-Object Classification` (GEOBIA) | No |
 | **`[viz]`** | Interactive Plotly Sankey diagrams (core already has zero-dep SVG fallback) | No |
 | **`luma-stack`** *(external)* | Installed separately from your org repo; integrated via `lc_framework.luma_adapter` | Yes |
 
@@ -95,31 +95,42 @@ LC_Framework/
 │   │                                   Segment Label Raster overflow repair, CSV & tiled GEE exports
 │   ├── luma_adapter.py               ← Zero-hard-dependency bridge to external luma-stack
 │   ├── temporal/                     ← [Stage 1] Harmonized Landsat/S2, monthly medians & CCDC
-│   ├── features/                     ← [Stage 2] Optical indices/deltas, S1/PALSAR SAR, terrain, GLCM & CSV export
+│   ├── features/                     ← [Stage 2] Indices/deltas, S1/PALSAR SAR, terrain, GLCM, CSV export & local RFECV
+│   ├── samples/                      ← [Stage 3] GEE AlphaEarth embedding Sample Augmentation & QA overlay
+│   ├── classification/               ← [Stage 4] GEE MULTIPROBABILITY RF & local ML pixel backends + tiled COG inference
+│   ├── obia/                         ← [Stage 5] Pluggable GEE SNIC / local SLIC Segmenter & pure GEOBIA
 │   ├── assembly/                     ← [Stage 6] Object-Refined Pixel Probs, CI=S/W, Bayesian smooth, masks & MMU
 │   └── evaluation/                   ← [Stage 7] Olofsson (2014) accuracy, log-loss, active learning & Sankey
 │
-├── notebooks/                        ← Ready-to-run Google Colab stage notebooks
+├── notebooks/                        ← Ready-to-run Google Colab stage notebooks (00–07)
+│   ├── 00_colab_setup_and_config.ipynb
 │   ├── 01_gee_ccdc_and_features.ipynb
+│   ├── 02_sample_augmentation_alphaearth.ipynb
+│   ├── 03_feature_selection_rfecv.ipynb
+│   ├── 04_pixel_classification_gee_and_local.ipynb
+│   ├── 05_segmentation_and_geobia.ipynb
 │   ├── 06_hybrid_classification_assembly.ipynb
 │   └── 07_accuracy_and_trajectory_evaluation.ipynb
 │
 ├── docs/
-│   ├── methodology/                  ← Scientific formulas & methodological safeguards
+│   ├── methodology/                  ← Scientific formulas & methodological safeguards (01–06)
+│   │   ├── 01_paradigm_selection_guide.md
 │   │   ├── 02_ccdc_temporal_segmentation.md
 │   │   ├── 03_probability_framework_and_hybrid.md
+│   │   ├── 04_geobia_and_segmentation.md
+│   │   ├── 05_embedding_sample_augmentation.md
 │   │   └── 06_accuracy_and_change_evaluation.md
-│   ├── api/                          ← Configuration & integration guides
+│   ├── api/                          ← Configuration, Colab & integration guides
 │   │   ├── configuration.md
-│   │   └── luma_integration.md
+│   │   ├── luma_integration.md
+│   │   └── colab_guide.md
 │   └── adr/                          ← Architectural Decision Records (0001–0005)
 │
 └── tests/unit/                       ← Offline pytest suite (synthetic rasters, mocked EE, import isolation)
 ```
 
 ### Implementation Roadmap Status
-- **Implemented**: Core `ProjectConfig`/`Class Schema`, `Class Probability Stack` & `Segment Label Raster` COG I/O, external `luma-stack` adapter, standalone Hybrid `Classification Assembly`, standalone Evaluation & Multi-Epoch Trajectories, GEE Optical Inputs & CCDC `Temporal Segment` pipeline, Multi-Sensor GEE Feature Stack & Sample CSV Export.
-- **In Progress (v1)**: GEE AlphaEarth `Sample Augmentation`, Local CSV-based RFECV feature selection, GEE & Local ML `Pixel-Based Classification`, pluggable Segmentation & pure `Geo-Object Classification` (GEOBIA), onboarding notebook & Paradigm Selection Guide.
+- **Implemented (v1 complete)**: Core `ProjectConfig`/`Class Schema` & COG I/O, external `luma-stack` adapter, GEE Optical/CCDC `Temporal Segment` pipeline, Multi-Sensor Feature Stack & CSV Export, GEE AlphaEarth `Sample Augmentation`, Local CSV RFECV feature selection, GEE `MULTIPROBABILITY` RF & Local ML `[ml]` `Pixel-Based Classification`, Pluggable GEE SNIC / Local SLIC Segmentation & Pure `Geo-Object Classification` (GEOBIA), Standalone Hybrid `Classification Assembly` (`Object-Refined Pixel Probabilities`), Standalone Olofsson Accuracy & Multi-Epoch Trajectory Evaluation, plus Colab onboarding notebooks (`00`–`07`) and methodology/API guides.
 - **Planned (v2)**: Optional local PyTorch/LoRA RSFM fine-tuning & inference (`[rsfm]`).
 
 ---
@@ -189,7 +200,7 @@ export_sankey_html(traj, "outputs/eval_2025/transitions_sankey.html")
 import ee
 from lc_framework.config import ProjectConfig
 from lc_framework.temporal import CCDCModel, CCDCParams, get_s2_collection, to_monthly_median
-from lc_framework.features import FeatureStackSpec, build_feature_stack, extract_sample_features
+from lc_framework.features import FeatureStackSpec, build_feature_stack
 
 ee.Initialize(project="your-gee-project-id")
 cfg = ProjectConfig.from_yaml("configs/example_project.yaml")
@@ -215,12 +226,17 @@ features = build_feature_stack(
 
 - **Domain Language**: [GLOSSARY.md](GLOSSARY.md)
 - **Methodology Guides**:
+  - [Paradigm Selection Guide: Pixel vs. Geo-Object vs. Hybrid](docs/methodology/01_paradigm_selection_guide.md)
   - [CCDC Temporal Segmentation & Synthetic Reflectance](docs/methodology/02_ccdc_temporal_segmentation.md)
   - [Probability Framework & Hybrid Classification Assembly](docs/methodology/03_probability_framework_and_hybrid.md)
+  - [Pluggable Segmentation & Geo-Object Classification (GEOBIA)](docs/methodology/04_geobia_and_segmentation.md)
+  - [AlphaEarth Embedding Sample Augmentation](docs/methodology/05_embedding_sample_augmentation.md)
   - [Accuracy Assessment, Active Learning & Multi-Epoch Change Evaluation](docs/methodology/06_accuracy_and_change_evaluation.md)
 - **API & Integration Guides**:
   - [Project Configuration & Class Schema](docs/api/configuration.md)
   - [Integrating External `luma-stack`](docs/api/luma_integration.md)
+  - [Colab Troubleshooting & EECU Optimization Guide](docs/api/colab_guide.md)
+- **Colab Starter Notebook**: [00_colab_setup_and_config.ipynb](notebooks/00_colab_setup_and_config.ipynb)
 - **Architectural Decisions**: [docs/adr/](docs/adr/) (`0001`–`0005`)
 
 ---

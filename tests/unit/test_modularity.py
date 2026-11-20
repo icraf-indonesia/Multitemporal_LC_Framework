@@ -141,6 +141,7 @@ def test_obia_imports_lazily_without_optional_dependencies() -> None:
         "assert 'lc_framework.assembly' not in sys.modules; "
         "assert 'lc_framework.evaluation' not in sys.modules; "
         "assert 'lc_framework.luma_adapter' not in sys.modules; "
+        "assert 'lc_framework.samples' not in sys.modules; "
         "snic = obia.GEESnicSegmenter(obia.SNICParams(size=10)); "
         "slic = obia.LocalSlicSegmenter(obia.SLICParams(n_segments=20)); "
         "assert isinstance(snic, obia.Segmenter); "
@@ -160,9 +161,30 @@ def test_classification_imports_lazily_without_optional_dependencies() -> None:
         "assert 'lc_framework.assembly' not in sys.modules; "
         "assert 'lc_framework.evaluation' not in sys.modules; "
         "assert 'lc_framework.luma_adapter' not in sys.modules; "
+        "assert 'lc_framework.samples' not in sys.modules; "
         "p = cls.GEERFParams(number_of_trees=100); "
         "assert p.to_ee_dict()['numberOfTrees'] == 100; "
         "grid = cls.default_param_space('random_forest'); "
         "assert 'n_estimators' in grid",
+        blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
+    )
+
+
+def test_samples_imports_lazily_without_optional_dependencies() -> None:
+    _run_isolated_import(
+        "import sys; import lc_framework.samples as samples; "
+        "assert 'lc_framework.temporal' not in sys.modules; "
+        "assert 'lc_framework.features' not in sys.modules; "
+        "assert 'lc_framework.classification' not in sys.modules; "
+        "assert 'lc_framework.obia' not in sys.modules; "
+        "assert 'lc_framework.assembly' not in sys.modules; "
+        "assert 'lc_framework.evaluation' not in sys.modules; "
+        "assert 'lc_framework.luma_adapter' not in sys.modules; "
+        "from lc_framework.config import ClassDefinition, ClassSchema; "
+        "s = ClassSchema(classes=(ClassDefinition(id=1, name='Forest'), "
+        "ClassDefinition(id=2, name='Water'))); "
+        "t = samples.resolve_class_thresholds(s, thresholds={'Forest': 0.92}, "
+        "default_threshold=0.88); "
+        "assert t == {1: 0.92, 2: 0.88}",
         blocked=("ee", "luma_ge", "sklearn", "lightgbm", "xgboost", "skimage", "geopandas"),
     )
